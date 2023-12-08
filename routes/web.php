@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+Route::get('/activities/data', function () {
     return view('welcome');
 });
+Route::get('/activities/data', [ActivityController::class, 'getData']);
+Route::post('/activities/download', [ActivityController::class, 'download']);
+Route::resource('activities', ActivityController::class);
+
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
