@@ -110,6 +110,6 @@ class MasterSeeder extends Seeder
         // ]);
         // $user2->assignRole('Staff');
 
-        Activities::factory()->count(100)->create();
+        // Activities::factory()->count(100)->create();
     }
 }
