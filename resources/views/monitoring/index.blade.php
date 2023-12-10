@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="/assets/vendor/@fortawesome/fontawesome-free/css/fontawesome.min.css" />
 <link rel="stylesheet" href="/assets/css/container.css">
 <link rel="stylesheet" href="/assets/css/text.css">
+<link rel="stylesheet" href="/assets/vendor/select2/dist/css/select2.min.css">
+
 @endsection
 
 @section('container')
@@ -19,7 +21,7 @@
                         <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
                             <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Kegiatan Harian</li>
+                            <li class="breadcrumb-item active" aria-current="page">Monitoring</li>
                         </ol>
                     </nav>
                 </div>
@@ -58,16 +60,11 @@
                     <!-- Card header -->
                     <div class="card-header pb-0">
                         <div class="row mb-3">
-                            <div class="col-md-7">
-                                <h3>Daftar Kegiatan Harian Saya</h3>
-                                <p class="mb-0"> <small>*Gunakan kotak search untuk melakukan pencarian berdasarkan rencana kinerja, kegiatan atau capaian</small></p>
+                            <div class="col-md-9">
+                                <h3>Monitoring Kegiatan Harian</h3>
+                                <p class="mb-0"> <small>*Tabel ini menunjukkan daftar kegiatan pegawai</small></p>
+                                <p class="mb-0"> <small>*Gunakan kotak search untuk melakukan pencarian bersarkan nama pegawai, rencana kinerja, kegiatan atau capaian</small></p>
                                 <p class="mb-0"> <small>*Tabel bisa discroll ke kanan-kiri (tampilan mobile)</small></p>
-                            </div>
-                            <div class="col-md-5 text-right">
-                                <a href="{{url('/activities/create')}}" class="btn btn-primary btn-round btn-icon mt-3" data-toggle="tooltip" data-original-title="Tambah Kegiatan Harian">
-                                    <span class="btn-inner--icon"><i class="fas fa-plus-circle"></i></span>
-                                    <span class="btn-inner--text">Tambah Kegiatan</span>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -78,7 +75,16 @@
                             </div>
                         </div>
                         <div class="form-row mb-2">
-                            <div class="col-md-6">
+                            <div class="col-md-3">
+                                <label class="form-control-label" for="user">Pegawai</label>
+                                <select onchange="userChange()" class="form-control d-inline" data-toggle="select" name="user" id="user">
+                                    <option value="all">Semua Pegawai</option>
+                                    @foreach($users as $user)
+                                    <option value="{{$user->id}}">{{$user->name}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="row">
                                     <div class="col">
                                         <label class="form-control-label" for="subround">Mulai</label>
@@ -97,12 +103,12 @@
                                     <span class="btn-inner--icon"><i class="fas fa-eye"></i></span>
                                     <span class="btn-inner--text">Tampilkan</span>
                                 </button>
-                                <form id="downloadform" class="d-inline" method="POST" action="/activities/download" data-toggle="tooltip" data-original-title="Unduh Data">
+                                <form id="downloadform" class="d-inline" method="POST" action="/activities/download" data-toggle="tooltip" data-original-title="Unduh Jadwal Panen">
                                     @csrf
-                                    <input type="hidden" name="monitoringhidden" value="false">
-                                    <input type="hidden" name="userhidden" value="{{Auth::user()->id}}">
-                                    <input type="hidden" name="starthidden" id="starthidden" id="start" value="all">
-                                    <input type="hidden" name="endhidden" id="endhidden" id="end" value="all">
+                                    <input type="hidden" name="monitoringhidden" value="true">
+                                    <input type="hidden" name="userhidden" id="userhidden" value="all">
+                                    <input type="hidden" name="starthidden" id="starthidden" value="all">
+                                    <input type="hidden" name="endhidden" id="endhidden" value="all">
                                     <button onclick="downloadData()" class="btn btn-icon btn-outline-primary mb-2" type="submit">
                                         <span class="btn-inner--icon"><i class="fas fa-download"></i></span>
                                         <span class="btn-inner--text">Download</span>
@@ -122,12 +128,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-3">
+                    <div class="row">
                         <div class="col-12" id="row-table">
                             <div class="table-responsive">
                                 <table class="table" id="datatable-id" width="100%">
                                     <thead class="thead-light">
                                         <tr>
+                                            <th>Nama</th>
                                             <th>Tanggal</th>
                                             <th>Jam</th>
                                             <th>Rencana Kinerja</th>
@@ -156,6 +163,7 @@
 <script src="/assets/vendor/sweetalert2/dist/sweetalert2.js"></script>
 <script src="/assets/vendor/datatables2/datatables.min.js"></script>
 <script src="/assets/vendor/momentjs/moment-with-locales.js"></script>
+<script src="/assets/vendor/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
 
 <script>
     // $('#datatable-id thead tr')
@@ -170,10 +178,14 @@
         "processing": true,
         // "responsive": true,
         "ajax": {
-            "url": '/activities/data/false/{{Auth::user()->id}}/all/all',
+            "url": '/activities/data/true/all/all/all',
             "type": 'GET',
         },
         "columns": [{
+                "responsivePriority": 8,
+                "width": "10%",
+                "data": "user_name",
+            }, {
                 "responsivePriority": 1,
                 "width": "3%",
                 "data": "date",
@@ -254,13 +266,8 @@
                 "data": "id",
                 "orderable": false,
                 "render": function(data, type, row) {
-                    return "<a href=\"/activities/" + data + "/edit\" class=\"btn btn-outline-info  btn-sm\" role=\"button\" aria-pressed=\"true\" data-toggle=\"tooltip\" data-original-title=\"Ubah Data\">" +
-                        "<span class=\"btn-inner--icon\"><i class=\"fas fa-edit\"></i></span></a>" +
-                        "<form class=\"d-inline\" id=\"formdelete" + data + "\" name=\"formdelete" + data + "\" onsubmit=\"deleteSchedule('" + data + "','" + row.activity_name + "')\" method=\"POST\" action=\"/activities/" + data + "\">" +
-                        '@method("delete")' +
-                        '@csrf' +
-                        "<button class=\"btn btn-icon btn-outline-danger btn-sm\" type=\"submit\" data-toggle=\"tooltip\" data-original-title=\"Hapus Data\">" +
-                        "<span class=\"btn-inner--icon\"><i class=\"fas fa-trash-alt\"></i></span></button></form>";
+                    return "<a href=\"/activities/" + data + "\" class=\"btn btn-outline-success  btn-sm\" role=\"button\" aria-pressed=\"true\" data-toggle=\"tooltip\" data-original-title=\"Ubah Data\">" +
+                        "<span class=\"btn-inner--icon\"><i class=\"fas fa-eye\"></i></span></a>";
                 }
             },
         ],
@@ -294,6 +301,8 @@
     });
 
     function getUrl() {
+        var e = document.getElementById('user');
+        var user = e.options[e.selectedIndex].value;
         var start = 'all'
         if (document.getElementById('start').value != null && document.getElementById('start').value != '') {
             start = document.getElementById('start').value;
@@ -303,7 +312,12 @@
             end = document.getElementById('end').value;
         }
 
-        return '/false/{{Auth::user()->id}}/' + start + "/" + end
+        return '/true/' + user + "/" + start + "/" + end;
+    }
+
+    function userChange() {
+        var e = document.getElementById('user');
+        document.getElementById('userhidden').value = e.options[e.selectedIndex].value;
     }
 
     function startChange() {
@@ -315,6 +329,8 @@
     }
 
     function endChange() {
+        console.log('djasda')
+
         var end = 'all'
         if (document.getElementById('end').value != null && document.getElementById('end').value != '') {
             end = document.getElementById('end').value;
@@ -329,11 +345,17 @@
 
     function getData() {
         table.ajax.url('/activities/data' + getUrl()).load()
-
         showHideFilter()
     }
 
     function showHideFilter() {
+        if (document.getElementById('user').value != 'all') {
+            document.getElementById('no-filter').style.display = 'none'
+            document.getElementById('user-filter').style.display = 'block'
+            document.getElementById('user-filter').innerHTML = "<h4 class='mb-0'><span class='badge badge-info mr-1'> " + document.getElementById('user').options[document.getElementById('user').selectedIndex].innerHTML + " </span></h4>"
+        } else {
+            document.getElementById('user-filter').style.display = 'none'
+        }
         if (document.getElementById('start').value != null && document.getElementById('start').value != '') {
             document.getElementById('no-filter').style.display = 'none'
             document.getElementById('start-filter').style.display = 'block'

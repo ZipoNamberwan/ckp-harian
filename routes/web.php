@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MonitoringController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -15,14 +17,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/activities/data', function () {
-    return view('welcome');
-});
-Route::get('/activities/data', [ActivityController::class, 'getData']);
-Route::post('/activities/download', [ActivityController::class, 'download']);
-Route::resource('activities', ActivityController::class);
-
-
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/', [HomeController::class, 'index']);
+
+    Route::get('/activities/data/{monitoring}/{user}/{start}/{end}', [ActivityController::class, 'getData']);
+    Route::post('/activities/download', [ActivityController::class, 'download']);
+    Route::resource('activities', ActivityController::class);
+
+    Route::group(['middleware' => ['role:Admin|Chief|Coordinator']], function () {
+        Route::get('/monitoring', [MonitoringController::class, 'index']);
+    });
+});
+
